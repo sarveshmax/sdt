@@ -1,0 +1,25 @@
+import bs58 from "bs58";
+import { Keypair } from "@solana/web3.js";
+
+function generateWallet() {
+  // Create a new Solana keypair
+  const keypair = Keypair.generate();
+
+  // Convert secret key (Uint8Array) → base58 string for Phantom import
+  const privateKeyBase58 = bs58.encode(keypair.secretKey);
+
+  // Public key
+  const publicKeyBase58 = keypair.publicKey.toBase58();
+
+  console.log("🔑 New Solana Wallet Generated");
+  console.log("------------------------------------------");
+  console.log("Public Key:");
+  console.log(publicKeyBase58);
+  console.log("\nPrivate Key (Base58 - use to import to Phantom):");
+  console.log(privateKeyBase58);
+  console.log("------------------------------------------");
+
+  return { publicKeyBase58, privateKeyBase58 };
+}
+
+generateWallet();

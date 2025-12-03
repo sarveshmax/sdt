@@ -1,64 +1,95 @@
-import Image from "next/image";
+"use client";
+
+import { useEffect, useState } from "react";
+
+const files = [
+  { name: "freeze-script.js", path: "/code/freeze-script.txt" },
+  { name: "config.json", path: "/code/config.txt" },
+  { name: "package.json", path: "/code/package.txt" },
+  { name: "generate-wallet.js", path: "/code/generate-wallet.txt" }
+];
 
 export default function Home() {
+  const [fileContents, setFileContents] = useState<Record<string, string>>({});
+  const [copiedFile, setCopiedFile] = useState<string | null>(null);
+
+  useEffect(() => {
+    files.forEach(async (file) => {
+      const res = await fetch(file.path);
+      const text = await res.text();
+      setFileContents((prev) => ({ ...prev, [file.name]: text }));
+    });
+  }, []);
+
+  const copyToClipboard = (fileName: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedFile(fileName);
+
+    setTimeout(() => {
+      setCopiedFile(null);
+    }, 1500);
+  };
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex min-h-screen w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
+    <div className="min-h-screen bg-[#111] text-gray-200">
+      <header className="sticky top-0 z-50 bg-[#181818] border-b border-gray-700 text-white px-6 py-4 text-xl font-bold shadow-md">
+        Solana Tools
+      </header>
+
+      <main className="mx-auto max-w-4xl py-10 px-4">
+        <h2 className="text-3xl font-semibold mb-8">Steps to Create Project</h2>
+
+        <ol className="list-decimal ml-6 mb-12 text-lg space-y-4 leading-relaxed">
+          <li>
+            Ensure you have these installed:
+            <div className="flex gap-4 mt-3">
+              <a
+                href="https://nodejs.org"
+                target="_blank"
+                className="bg-blue-600 hover:bg-blue-700 transition text-white px-4 py-2 rounded-lg shadow"
+              >
+                Install Node/npm
+              </a>
+              <a
+                href="https://code.visualstudio.com"
+                target="_blank"
+                className="bg-blue-600 hover:bg-blue-700 transition text-white px-4 py-2 rounded-lg shadow"
+              >
+                Install VS Code
+              </a>
+            </div>
+          </li>
+
+          <li>
+            Create these 4 files inside VS Code:
+            <div className="bg-gray-800 border border-gray-700 text-gray-300 mt-3 px-4 py-3 rounded">
+              freeze-script.js <br />
+              config.json <br />
+              package.json <br />
+              generate-wallet.js
+            </div>
+          </li>
+        </ol>
+
+        {files.map((file) => (
+          <div key={file.name} className="mb-10 rounded-lg overflow-hidden border border-gray-700">
+            <div className="flex justify-between items-center bg-[#1d1d1d] px-4 py-3">
+              <span className="font-semibold text-gray-200">{file.name}</span>
+              <button
+                className="bg-gray-600 hover:bg-gray-500 transition text-white px-3 py-1.5 rounded"
+                onClick={() => copyToClipboard(file.name, fileContents[file.name] || "")}
+              >
+                {copiedFile === file.name ? "Copied!" : "Copy"}
+              </button>
+            </div>
+            <textarea
+              readOnly
+              spellCheck={false}
+              value={fileContents[file.name] || "Loading..."}
+              className="w-full h-64 p-5 bg-[#0d0d0d] text-gray-300 font-mono text-sm resize-none focus:outline-none"
             />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+          </div>
+        ))}
       </main>
     </div>
   );
