@@ -5,13 +5,13 @@
   "priorityRate": 25000,
 
   "privateKey": "ENTER_PRIVATE_KEY_HERE",
-  "rpcEndpoint": "https://solana-mainnet.g.alchemy.com/v2/XXXXXXXXXXX_ADD_REAL_ENDPOINT",
+  "rpcEndpoint": "ENTER_RPC_URL_HERE",
   "mintAddress": "ENTER_TOKENS_MINT_AADRESS_HERE",
   "whitelist": [
     "1nc1nerator11111111111111111111111111111111",
     "1nc1nerator11111111111111111111111111111111"
   ],
   "pumpswapauthority": [
-    "PUMP_SWAP_AUTHORITY_ADDRESS"
+    "PUMP_FUN_TOP_HOLDER_WALLET_ADDRESS"
   ] 
 }

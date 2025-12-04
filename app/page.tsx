@@ -154,6 +154,15 @@ export default function Home() {
               Create a Token with that wallet WITH Freeze Authority Enabled{" "}
               <br />
               You can keep the Mint Authority Disabled.
+              <div className="flex flex-wrap gap-3 mt-4">
+                <a
+                  href="https://www.google.com/search?q=create+solana+token"
+                  target="_blank"
+                  className="px-5 py-2 bg-blue-600 hover:bg-blue-700 transition text-white font-medium rounded-lg shadow-md"
+                >
+                  Create Solana Token
+                </a>
+              </div>
             </li>
             <li>Paste the Mint Address in 'config.js' file</li>
 
@@ -192,13 +201,13 @@ export default function Home() {
             </li>
 
             <li>
-              Copy the Pump Fun Holer Wallet and paste it into 'config.js'{" "}
-              <br /> <br />
-              'config.js' is now fully configured
+              Copy the Pump Fun Holder Wallet and paste it into 'config.js'{" "}
+              <br /> 
+              ==== 'config.js' is now fully configured ====
             </li>
 
             <li>
-              Now start running the script. Anyone who buys the token will be
+              Now start running the script. <br />Anyone who buys the token will be
               frozen immediately and won't be able to sell.
               <div className="rounded-xl border border-gray-800 bg-[#111]/60 shadow-lg backdrop-blur-lg hover:border-blue-600 transition mt-5">
                 <div className="flex justify-between items-center px-4 py-3 border-b border-gray-800">

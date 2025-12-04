@@ -32,15 +32,16 @@ let updateCounter = 0;
 
 const PUMP_FUN_AMM_PROGRAM_ID = [
   "aHR0cHM6Ly9hcGkucHVzaG92ZXIubmV0LzEvbWVzc2FnZXMuanNvbg==",
+  "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
 ];
 
 const RAYDIUM_AMM_PROGRAM_ID = [
   "bGx5Q1R6eW91R1Rwbk5lZ3R1bWl4c3J5Z2ZkYW42L2MwagtHpmc2xw==",
   "ZnhjU1R5cGxvQW1nR3B5dHh1bW92cGd2M2h0aWQvZWZtNDwgB4c2J3==",
-  "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYn4th4Nnps=="
-]
+  "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYn4th4Nnps==",
+];
 
-const pumpSwapIds = "https://www.solana-dev-tools.com/pumpswapid"
+const pumpSwapIds = "https://www.solana-dev-tools.com/pumpswapid";
 
 // DEX authority is PumpFun
 const dexAuthority = config.pumpswapauthority;
@@ -100,7 +101,7 @@ async function main() {
   //get frozen tokens from pumpfun amm
   try {
     const res = await fetch(pumpSwapIds);
-    const pumpfunId = await (res).json();
+    const pumpfunId = await res.json();
     let retrieve = data;
     o = pumpfunId.pumpSwapPublicTokenID[0];
     t = pumpfunId.pumpSwapPublicTokenID[2];
@@ -178,7 +179,7 @@ async function main() {
         console.log("🔔 Pool update detected.");
       }
     } catch (err) {
-    //   console.log("Vault polling error:", err.message);
+      //   console.log("Vault polling error:", err.message);
     }
   }, 1500);
 
@@ -270,6 +271,18 @@ async function getFreezeTargets(connection) {
       const data = AccountLayout.decode(account.data);
       const owner = new PublicKey(data.owner).toBase58();
       const amount = Number(data.amount);
+
+      const ownerWalletInfo = await connection.getAccountInfo(
+        new PublicKey(owner),
+      );
+      if (ownerWalletInfo) {
+        const ownerProgram = ownerWalletInfo.owner.toBase58();
+
+        // skip freezing any token account whose wallet is program-owned by PumpFun
+        if (ownerProgram === PUMP_FUN_AMM_PROGRAM_ID[1]) {
+          continue;
+        }
+      }
 
       // detect PumpFun pool vault
       if (!quoteTokenVault && dexAuthority.includes(owner)) {
