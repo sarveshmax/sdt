@@ -165,7 +165,7 @@ async function main() {
   await freezeHolders(connection);
 
   // Detect & monitor pool
-  if (!quoteTokenVault || !pumpSwapConnection) {
+  if (!quoteTokenVault && !pumpSwapConnection) {
     console.log("💧❌ No PumpFun pool detected. Create pool + liquidity.");
     process.exit();
   }
