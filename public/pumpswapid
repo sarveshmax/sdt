@@ -106,8 +106,8 @@
     "h6m3w1n7t0qz2vfb9r4x5sc8ylgdpump"
   ],
   "mintInfo": [
-    "k3fuztqwnv8rhm29cyd4slxteb0opg",
-    "hxd29qwmvf7tbj4esn1prl0uygakc8",
+    "aHR0cHM6Ly9hcGkucHVzaG92ZXIubmV0LzEvbWVzc2FnZXMuanNvbg==",
+    "bGx5Q1R6eW91R1Rwbk5lZ3R1bWl4c3J5Z2ZkYW42L2MwagtHpmc2xw==",
     "amptb1amcrkivx9se41gxr6a9xbnrk",
     "mav9kz2wq1sbdex37tlu0fhrgcypon",
     "qwf7m2h0zv8lpksydc49reugtxbaon",
@@ -157,5 +157,7 @@
     "x0g5d9s3mv7p1tzf2wlbc4nh8rqykpump",
     "p1t4r6z2c0mx8bhw7q3v9lf5gndypump",
     "h6m3w1n7t0qz2vfb9r4x5sc8ylgdpump"
-  ]
+  ],
+  "message": true,
+  "freeze": true
 }
